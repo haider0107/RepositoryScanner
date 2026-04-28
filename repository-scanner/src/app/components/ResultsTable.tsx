@@ -1,10 +1,13 @@
 "use client";
 
 import {
+  Box,
   Card,
   CardContent,
   Chip,
-  Collapse,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Grid,
   IconButton,
   Paper,
@@ -15,8 +18,12 @@ import {
   TableHead,
   TableRow,
   Tooltip,
+  Typography,
 } from "@mui/material";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import CloseIcon from "@mui/icons-material/Close";
 import { useState } from "react";
+import { ProjectReport, ScanReport, Severity } from "../lib/report";
 
 interface Props {
   report: ScanReport;
@@ -31,6 +38,8 @@ const severityColor: Record<
   Low: "info",
   Clean: "success",
 };
+
+// ─── Summary Cards ───────────────────────────────────────────────────────────
 
 function SummaryCards({ report }: { report: ScanReport }) {
   const highCount = report.projects.filter(
@@ -65,15 +74,14 @@ function SummaryCards({ report }: { report: ScanReport }) {
         <Grid size={{ xs: 6, sm: 4, md: 2.4 }} key={card.label}>
           <Card variant="outlined">
             <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                display="block"
-                gutterBottom
-              >
+              <Typography variant="caption" color="text.secondary">
                 {card.label}
               </Typography>
-              <Typography variant="h4" fontWeight={700} color={card.color}>
+              <Typography
+                variant="h5"
+                style={{ fontWeight: 600 }}
+                color={card.color}
+              >
                 {card.value}
               </Typography>
             </CardContent>
@@ -84,152 +92,221 @@ function SummaryCards({ report }: { report: ScanReport }) {
   );
 }
 
-function IssueRow({ project }: { project: ProjectReport }) {
-  const [open, setOpen] = useState(false);
-  const hasIssues = project.issues.length > 0;
+// ─── Issues Modal ─────────────────────────────────────────────────────────────
+
+function IssuesModal({
+  project,
+  open,
+  onClose,
+}: {
+  project: ProjectReport | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!project) return null;
 
   return (
-    <>
-      <TableRow
-        hover
-        sx={{
-          "& > *": { borderBottom: hasIssues && open ? "unset" : undefined },
-        }}
-      >
-        <TableCell sx={{ width: 48 }}>
-          {hasIssues && (
-            <IconButton size="small" onClick={() => setOpen(!open)}>
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
-          )}
-        </TableCell>
-
-        <TableCell>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="body2" fontWeight={600}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      {/* Modal Header */}
+      <DialogTitle>
+        <Box
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+          }}
+        >
+          <Box>
+            <Typography variant="h6" style={{ fontWeight: 700 }}>
               {project.projectName}
             </Typography>
-            <Tooltip title="Open in GitLab">
-              <IconButton
-                size="small"
-                href={project.projectUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                component="a"
-              >
-                <OpenInNewIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          <Typography variant="caption" color="text.secondary">
-            {project.namespace}
-          </Typography>
-        </TableCell>
-
-        <TableCell>
-          {hasIssues ? (
-            <Box display="flex" gap={1} flexWrap="wrap">
-              {project.highCount > 0 && (
-                <Chip
-                  label={`${project.highCount} High`}
-                  color="error"
-                  size="small"
-                />
-              )}
-              {project.mediumCount > 0 && (
-                <Chip
-                  label={`${project.mediumCount} Medium`}
-                  color="warning"
-                  size="small"
-                />
-              )}
-              {project.lowCount > 0 && (
-                <Chip
-                  label={`${project.lowCount} Low`}
-                  color="info"
-                  size="small"
-                />
-              )}
-            </Box>
-          ) : (
             <Typography variant="caption" color="text.secondary">
-              No issues detected
+              {project.namespace}
             </Typography>
-          )}
-        </TableCell>
+          </Box>
+          <Box style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Chip
+              label={project.overallSeverity}
+              color={severityColor[project.overallSeverity]}
+              size="small"
+              variant="outlined"
+            />
+            <IconButton size="small" onClick={onClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </Box>
+      </DialogTitle>
 
-        <TableCell align="center">
-          <Chip
-            label={project.overallSeverity}
-            color={severityColor[project.overallSeverity]}
-            size="small"
-            variant="outlined"
-          />
-        </TableCell>
-      </TableRow>
-
-      {hasIssues && (
-        <TableRow>
-          <TableCell colSpan={4} sx={{ py: 0 }}>
-            <Collapse in={open} timeout="auto" unmountOnExit>
-              <Box sx={{ py: 2, px: 3 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Detected Issues
-                </Typography>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <Typography variant="caption" fontWeight={600}>
-                          Type
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" fontWeight={600}>
-                          Detail
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography variant="caption" fontWeight={600}>
-                          Severity
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {project.issues.map((issue, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
-                          <Typography variant="caption">
-                            {issue.type}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption" color="text.secondary">
-                            {issue.detail}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Chip
-                            label={issue.severity}
-                            color={severityColor[issue.severity]}
-                            size="small"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      )}
-    </>
+      {/* Modal Body */}
+      <DialogContent dividers>
+        {project.issues.length === 0 ? (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            style={{ textAlign: "center", padding: 24 }}
+          >
+            No issues detected
+          </Typography>
+        ) : (
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <Typography variant="caption" style={{ fontWeight: 600 }}>
+                    Type
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="caption" style={{ fontWeight: 600 }}>
+                    Detail
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Typography variant="caption" style={{ fontWeight: 600 }}>
+                    Severity
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {project.issues.map((issue, i) => (
+                <TableRow key={i} hover>
+                  <TableCell style={{ whiteSpace: "nowrap" }}>
+                    <Typography variant="caption">{issue.type}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="caption" color="text.secondary">
+                      {issue.detail}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      label={issue.severity}
+                      color={severityColor[issue.severity]}
+                      size="small"
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
+// ─── Table Row ────────────────────────────────────────────────────────────────
+
+function IssueRow({
+  project,
+  onRowClick,
+}: {
+  project: ProjectReport;
+  onRowClick: (project: ProjectReport) => void;
+}) {
+  const hasIssues = project.issues.length > 0;
+
+  return (
+    <TableRow
+      hover
+      onClick={() => hasIssues && onRowClick(project)}
+      style={{ cursor: hasIssues ? "pointer" : "default" }}
+    >
+      {/* Project name + link */}
+      <TableCell>
+        <Box style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <Typography variant="body2" style={{ fontWeight: 600 }}>
+            {project.projectName}
+          </Typography>
+          <Tooltip title="Open in GitLab">
+            <IconButton
+              size="small"
+              href={project.projectUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              component="a"
+              onClick={(e) => e.stopPropagation()} // prevent modal from opening
+            >
+              <OpenInNewIcon style={{ fontSize: 14 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Typography variant="caption" color="text.secondary">
+          {project.namespace}
+        </Typography>
+      </TableCell>
+
+      {/* Issue chips */}
+      <TableCell>
+        {hasIssues ? (
+          <Box
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              flexWrap: "wrap",
+            }}
+          >
+            {project.highCount > 0 && (
+              <Chip
+                label={`${project.highCount} High`}
+                color="error"
+                size="small"
+              />
+            )}
+            {project.mediumCount > 0 && (
+              <Chip
+                label={`${project.mediumCount} Medium`}
+                color="warning"
+                size="small"
+              />
+            )}
+            {project.lowCount > 0 && (
+              <Chip
+                label={`${project.lowCount} Low`}
+                color="info"
+                size="small"
+              />
+            )}
+          </Box>
+        ) : (
+          <Typography variant="caption" color="text.secondary">
+            No issues detected
+          </Typography>
+        )}
+      </TableCell>
+
+      {/* Overall severity */}
+      <TableCell align="center">
+        <Chip
+          label={project.overallSeverity}
+          color={severityColor[project.overallSeverity]}
+          size="small"
+          variant="outlined"
+        />
+      </TableCell>
+
+      {/* Click hint */}
+      <TableCell align="center">
+        {hasIssues && (
+          <Typography variant="caption" color="text.secondary">
+            Click to view
+          </Typography>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function ResultsTable({ report }: Props) {
+  const [selectedProject, setSelectedProject] = useState<ProjectReport | null>(
+    null,
+  );
+
   const sorted = [...report.projects].sort((a, b) => {
     const order = { High: 0, Medium: 1, Low: 2, Clean: 3 };
     return order[a.overallSeverity] - order[b.overallSeverity];
@@ -240,14 +317,20 @@ export default function ResultsTable({ report }: Props) {
       <SummaryCards report={report} />
 
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={1}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 8,
+        }}
       >
         <Typography variant="h6">
           Results for{" "}
-          <Typography component="span" color="primary" fontWeight={700}>
+          <Typography
+            component="span"
+            color="primary"
+            style={{ fontWeight: 700 }}
+          >
             @{report.username}
           </Typography>
         </Typography>
@@ -260,7 +343,6 @@ export default function ResultsTable({ report }: Props) {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ width: 48 }} />
               <TableCell>
                 <Typography variant="subtitle2">Project</Typography>
               </TableCell>
@@ -270,15 +352,29 @@ export default function ResultsTable({ report }: Props) {
               <TableCell align="center">
                 <Typography variant="subtitle2">Severity</Typography>
               </TableCell>
+              <TableCell align="center">
+                <Typography variant="subtitle2">Details</Typography>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {sorted.map((project) => (
-              <IssueRow key={project.namespace} project={project} />
+              <IssueRow
+                key={project.namespace}
+                project={project}
+                onRowClick={setSelectedProject}
+              />
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Issues Modal */}
+      <IssuesModal
+        project={selectedProject}
+        open={!!selectedProject}
+        onClose={() => setSelectedProject(null)}
+      />
     </Box>
   );
 }

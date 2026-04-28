@@ -1,19 +1,9 @@
+import { REQUIRED_FILES } from "../constants";
 import { GitLabTreeItem } from "../gitlab";
 
 export interface MetadataResult {
   missing: string[];
 }
-
-const REQUIRED_FILES = [
-  {
-    label: "README",
-    patterns: ["README.md", "README.txt", "README.rst", "README", "readme.md"],
-  },
-  {
-    label: "LICENSE",
-    patterns: ["LICENSE", "LICENSE.md", "LICENSE.txt", "LICENCE", "licence.md"],
-  },
-];
 
 export function scanMissingMetadata(tree: GitLabTreeItem[]): MetadataResult {
   const filePaths = new Set(tree.map((item) => item.path.toLowerCase()));

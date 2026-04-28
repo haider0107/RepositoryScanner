@@ -53,7 +53,7 @@ async function runScan(username: string) {
           // 1. Sensitive files
           const sensitiveFiles = scanSensitiveFiles(tree);
 
-          // 2. Exposed secrets — scan file contents (cap at 50 files to avoid rate limits)
+          // 2. Exposed secrets — scan file contents
           const secretMatches: { filePath: string; line: number; pattern: string }[] = [];
           const filesToScan = tree
             .filter((item) => shouldScanFile(item.path))

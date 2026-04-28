@@ -15,10 +15,9 @@ import {
   Typography,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import DownloadIcon from "@mui/icons-material/Download";
 import SecurityIcon from "@mui/icons-material/Security";
-import ResultsTable from "@/components/ResultsTable";
-import { ScanReport } from "@/lib/report";
+import { ScanReport } from "./lib/report";
+import ResultsTable from "./components/ResultsTable";
 
 type ScanState = "idle" | "scanning" | "done" | "error";
 
@@ -78,7 +77,11 @@ export default function Home() {
     return new Promise<void>((resolve, reject) => {
       const interval = setInterval(async () => {
         pollCount++;
-        setProgress(PROGRESS_MESSAGES[Math.min(Math.floor(pollCount / 4), PROGRESS_MESSAGES.length - 1)]);
+        setProgress(
+          PROGRESS_MESSAGES[
+            Math.min(Math.floor(pollCount / 4), PROGRESS_MESSAGES.length - 1)
+          ],
+        );
 
         if (pollCount > MAX_POLLS) {
           clearInterval(interval);
@@ -106,42 +109,43 @@ export default function Home() {
     });
   }
 
-  function handleExportJSON() {
-    if (!report) return;
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `gitlab-scan-${report.username}-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth="lg" style={{ paddingTop: 48, paddingBottom: 48 }}>
       {/* Header */}
-      <Box mb={5}>
-        <Box display="flex" alignItems="center" gap={1.5} mb={1}>
+      <Box style={{ marginBottom: 40 }}>
+        <Box
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 8,
+          }}
+        >
           <SecurityIcon color="primary" />
-          <Typography variant="overline" color="primary" fontWeight={700} letterSpacing={2}>
+          <Typography
+            variant="overline"
+            color="primary"
+            style={{ fontWeight: 700, letterSpacing: 2 }}
+          >
             GitLab Security Scanner
           </Typography>
         </Box>
-        <Typography variant="h4" fontWeight={800} gutterBottom>
+        <Typography variant="h4" style={{ fontWeight: 800 }} gutterBottom>
           Repository Risk Scanner
         </Typography>
-        <Typography variant="body1" color="text.secondary" maxWidth={500}>
-          Scan public GitLab repositories for exposed secrets, sensitive files, and missing metadata.
+        <Typography variant="body1" color="text.secondary">
+          Scan public GitLab repositories for exposed secrets, sensitive files,
+          and missing metadata.
         </Typography>
       </Box>
 
       {/* Input card */}
-      <Paper variant="outlined" sx={{ p: 3, mb: 4 }}>
+      <Paper variant="outlined" style={{ padding: 24, marginBottom: 32 }}>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
           GitLab Username or Group
         </Typography>
 
-        <Box display="flex" gap={2} mb={2}>
+        <Box style={{ display: "flex", gap: 16, marginBottom: 16 }}>
           <TextField
             fullWidth
             size="small"
@@ -162,28 +166,47 @@ export default function Home() {
             variant="contained"
             onClick={handleScan}
             disabled={state === "scanning" || !username.trim()}
-            startIcon={state === "scanning" ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
-            sx={{ whiteSpace: "nowrap", minWidth: 120 }}
+            startIcon={
+              state === "scanning" ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <SearchIcon />
+              )
+            }
+            style={{ whiteSpace: "nowrap", minWidth: 120 }}
           >
             {state === "scanning" ? "Scanning..." : "Scan"}
           </Button>
         </Box>
 
-        <Box display="flex" gap={1} flexWrap="wrap">
+        <Box style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {SCAN_CATEGORIES.map(({ label, color }) => (
-            <Chip key={label} label={label} color={color} size="small" variant="outlined" />
+            <Chip
+              key={label}
+              label={label}
+              color={color}
+              size="small"
+              variant="outlined"
+            />
           ))}
         </Box>
       </Paper>
 
       {/* Scanning progress */}
       {state === "scanning" && (
-        <Paper variant="outlined" sx={{ p: 4, mb: 4, textAlign: "center" }}>
-          <LinearProgress sx={{ mb: 3, borderRadius: 1 }} />
+        <Paper
+          variant="outlined"
+          style={{ padding: 32, marginBottom: 32, textAlign: "center" }}
+        >
+          <LinearProgress style={{ marginBottom: 16, borderRadius: 4 }} />
           <Typography variant="body2" color="text.secondary">
             {progress}
           </Typography>
-          <Typography variant="caption" color="text.disabled" display="block" mt={1}>
+          <Typography
+            variant="caption"
+            color="text.disabled"
+            style={{ marginTop: 8, display: "block" }}
+          >
             This may take a moment depending on how many repositories exist
           </Typography>
         </Paper>
@@ -191,7 +214,7 @@ export default function Home() {
 
       {/* Error */}
       {state === "error" && (
-        <Alert severity="error" sx={{ mb: 4 }}>
+        <Alert severity="error" style={{ marginBottom: 32 }}>
           {error}
         </Alert>
       )}
@@ -199,15 +222,20 @@ export default function Home() {
       {/* Results */}
       {state === "done" && report && (
         <>
-          <Box display="flex" justifyContent="flex-end" mb={2}>
-            <Button
+          <Box
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: 16,
+            }}
+          >
+            {/* <Button
               variant="outlined"
               size="small"
               startIcon={<DownloadIcon />}
-              onClick={handleExportJSON}
             >
               Export JSON
-            </Button>
+            </Button> */}
           </Box>
           <ResultsTable report={report} />
         </>
